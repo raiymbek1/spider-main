@@ -1,0 +1,45 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres
+    networks:
+      new:
+        aliases:
+          - database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1952
+      POSTGRES_DB: postsdb
+    ports:
+      - "5432:5432"
+
+  migrate:
+    image : migrate/migrate
+    networks:
+      - new
+    volumes:
+      - ./migrations:/migrations
+    command: ["-path", "/migrations", "-database",  "postgres://postgres:1952@database:5432/postsdb?sslmode=disable", "up", "1"]
+    links:
+      - db
+
+  scrapper-api:
+    networks:
+      - new
+    build: scrapper
+    ports :
+      - "8080:8080"
+    depends_on:
+      - db
+
+  crawler:
+    networks:
+      - new
+    build: crawler
+    depends_on:
+      - db
+
+
+networks:
+  new:
